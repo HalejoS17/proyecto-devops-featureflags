@@ -9,8 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx",
     "test": "vitest --run",
-    "test:e2e": "start-server-and-test dev http://localhost:5173 cypress:run",
-    "cypress:run": "cypress run"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "launchdarkly-js-client-sdk": "^3.9.0",
@@ -20,6 +19,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.2.5",

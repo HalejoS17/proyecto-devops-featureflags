@@ -18,14 +18,12 @@ jobs:
       - run: npm install
       - run: npm test || echo "No unit tests configured"
 
-  e2e_tests:
-    docker:
-      - image: mcr.microsoft.com/playwright:v1.44.0-jammy
+  component_tests:
+    executor: node/default
     steps:
       - checkout
       - run: npm install
-      - run: npx playwright install --with-deps
-      - run: npm run test:e2e
+      - run: npm run test:ci
 
   build_docker_image:
     docker:
@@ -48,19 +46,18 @@ jobs:
 
 workflows:
   version: 2
-
   full_pipeline:
     jobs:
       - lint_code
       - unit_tests:
           requires:
             - lint_code
-      - e2e_tests:
+      - component_tests:
           requires:
             - unit_tests
       - build_docker_image:
           requires:
-            - e2e_tests
+            - component_tests
       - notify:
           requires:
             - build_docker_image

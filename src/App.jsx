@@ -1,20 +1,18 @@
-// App.jsx
 import { useLDClient } from "launchdarkly-react-client-sdk";
 import { useEffect, useState } from "react";
 import { books } from "./books";
 
 export default function App() {
-  const ldClient = useLDClient(); // Hook 1
+  const ldClient = useLDClient();
 
-  const [ready, setReady] = useState(false);        // Hook 2
-  const [busquedaAvanzada, setBusquedaAvanzada] = useState(false); // Hook 3
-  const [searchTitle, setSearchTitle] = useState("");              // Hook 4
-  const [category, setCategory] = useState("");                    // Hook 5
+  const [ready, setReady] = useState(false);
+  const [busquedaAvanzada, setBusquedaAvanzada] = useState(false);
+  const [searchTitle, setSearchTitle] = useState("");
+  const [category, setCategory] = useState("");
 
-    useEffect(() => {
+  useEffect(() => {
     const isTest = import.meta.env.MODE === "test";
 
-    // 🟦 Caso 1: entorno de pruebas → liberar UI rápidamente
     if (isTest) {
       setTimeout(() => {
         setReady(true);
@@ -23,7 +21,6 @@ export default function App() {
       return;
     }
 
-    // 🟦 Caso 2: no existe LaunchDarkly (CI, tests, modo offline)
     if (!ldClient) {
       setTimeout(() => {
         setBusquedaAvanzada(false);
@@ -32,7 +29,6 @@ export default function App() {
       return;
     }
 
-    // 🟦 Caso 3: LaunchDarkly sí existe
     ldClient
       .waitForInitialization()
       .then(() => {
@@ -47,58 +43,137 @@ export default function App() {
   }, [ldClient]);
 
   if (!ready) {
-    return <p>Cargando LaunchDarkly...</p>;
+    return (
+      <div style={loadingStyle}>
+        <p style={{ fontSize: "22px", color: "#444" }}>Cargando LaunchDarkly...</p>
+      </div>
+    );
   }
 
   const categoriasUnicas = [...new Set(books.map((b) => b.category))];
 
-  const filteredBooks = books.filter((book) => {
-    const byTitle = book.title
-      .toLowerCase()
-      .includes(searchTitle.toLowerCase());
-
+  const filteredBooks = books.filter((b) => {
+    const byTitle = b.title.toLowerCase().includes(searchTitle.toLowerCase());
     const byCategory =
-      !busquedaAvanzada || category === "" || book.category === category;
+      !busquedaAvanzada || category === "" || b.category === category;
 
     return byTitle && byCategory;
   });
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <p>Flag busqueda_avanzada: {String(busquedaAvanzada)}</p>
+    <div style={pageStyle}>
+      {/* Badge del flag */}
+      <div
+        style={{
+          background: busquedaAvanzada ? "#C8F7DC" : "#FFD6D6",
+          color: busquedaAvanzada ? "#0D6832" : "#8B1A1A",
+          padding: "10px 18px",
+          borderRadius: "20px",
+          display: "inline-block",
+          marginBottom: "1.5rem",
+          fontSize: "14px",
+          fontWeight: "bold",
+        }}
+      >
+        🌐 Flag busqueda_avanzada: {String(busquedaAvanzada)}
+      </div>
 
-      <h1 data-testid="titulo-biblioteca">📚 Biblioteca virtual</h1>
+      <h1 style={titleStyle}>📚 Biblioteca Virtual</h1>
 
-      <input
-        type="text"
-        placeholder="Buscar..."
-        value={searchTitle}
-        onChange={(e) => setSearchTitle(e.target.value)}
-      />
+      {/* Barra de búsqueda */}
+      <div style={searchContainer}>
+        <input
+          type="text"
+          placeholder="Buscar libro..."
+          value={searchTitle}
+          onChange={(e) => setSearchTitle(e.target.value)}
+          style={searchInput}
+        />
 
-      {/* 🔓 Este select solo aparece si el flag está en true */}
-      {busquedaAvanzada && (
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          style={{ marginLeft: "0.5rem" }}
-        >
-          <option value="">Todas</option>
-          {categoriasUnicas.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-      )}
+        {busquedaAvanzada && (
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="">Todas las categorías</option>
+            {categoriasUnicas.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
-      <ul>
+      {/* Lista de libros */}
+      <div style={{ marginTop: "1.5rem" }}>
         {filteredBooks.map((b) => (
-          <li key={b.id}>
-            {b.title} – {b.author} ({b.category})
-          </li>
+          <div key={b.id} style={bookCard}>
+            <h3 style={{ margin: 0 }}>{b.title}</h3>
+            <p style={{ margin: "5px 0", color: "#666" }}>
+              {b.author} — <span style={{ fontStyle: "italic" }}>{b.category}</span>
+            </p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
+
+//
+// ESTILOS
+//
+
+const pageStyle = {
+  maxWidth: "950px",
+  margin: "0 auto",
+  padding: "2rem",
+  fontFamily: "Inter, sans-serif",
+};
+
+const titleStyle = {
+  textAlign: "center",
+  fontSize: "40px",
+  fontWeight: "800",
+  marginBottom: "1.5rem",
+};
+
+const searchContainer = {
+  display: "flex",
+  gap: "1rem",
+  justifyContent: "center",
+  flexWrap: "wrap",
+};
+
+const searchInput = {
+  flex: 1,
+  padding: "12px",
+  minWidth: "250px",
+  borderRadius: "10px",
+  border: "1px solid #ddd",
+  fontSize: "16px",
+};
+
+const selectStyle = {
+  padding: "12px",
+  borderRadius: "10px",
+  border: "1px solid #ddd",
+  fontSize: "16px",
+};
+
+const bookCard = {
+  background: "white",
+  padding: "1rem",
+  borderRadius: "12px",
+  marginBottom: "1rem",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+};
+
+const loadingStyle = {
+  height: "100vh",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  fontFamily: "Inter, sans-serif",
+};

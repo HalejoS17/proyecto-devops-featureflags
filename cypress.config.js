@@ -3,7 +3,7 @@ import viteConfig from "./vite.config.js";
 
 export default defineConfig({
   e2e: {
-    baseUrl: "http://localhost:5173",
+    supportFile: "cypress/support/e2e.js",
   },
   component: {
     devServer: {

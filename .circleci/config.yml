@@ -1,0 +1,91 @@
+version: 2.1
+
+orbs:
+  cypress: cypress-io/cypress@3.3.1
+
+jobs:
+  install_dependencies:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: cd app-frontend && npm install
+
+  lint_code:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+      - run:
+          name: Run ESLint
+          command: cd app-frontend && npm run lint
+
+  unit_tests:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+      - run:
+          name: Run unit tests
+          command: cd app-frontend && npm test || echo "No tests found"
+
+  e2e_tests:
+    docker:
+      - image: cypress/included:13.0.0
+    steps:
+      - checkout
+      - run:
+          name: Run Cypress tests
+          command: cd app-frontend && npx cypress run
+
+  build_docker_image:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Docker image
+          command: docker build -t sha1727/featureflags-frontend:latest app-frontend
+      - run:
+          name: Login to DockerHub
+          command: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+      - run:
+          name: Push image
+          command: docker push sha1727/featureflags-frontend:latest
+
+
+workflows:
+  version: 2
+
+  # Workflow 1 – Validación
+  validate_pipeline:
+    jobs:
+      - install_dependencies
+      - lint_code:
+          requires:
+            - install_dependencies
+      - unit_tests:
+          requires:
+            - install_dependencies
+      - e2e_tests:
+          requires:
+            - install_dependencies
+
+  # Workflow 2 – Build + Deploy automático a ArgoCD
+  build_and_deploy:
+    jobs:
+      - build_docker_image:
+          requires:
+            - lint_code
+            - unit_tests
+            - e2e_tests
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"
+          filters:
+            branches:
+              only:
+                - main

@@ -14,11 +14,13 @@ export default function App() {
     useEffect(() => {
     const isTest = import.meta.env.MODE === "test";
 
-    if (isTest) {
+     if (isTest) {
+    setTimeout(() => {
       setReady(true);
       setBusquedaAvanzada(false);
-      return;
-    }
+    }, 0);
+    return;
+  }
     // 🟦 Caso 1: No hay cliente de LaunchDarkly (tests unitarios / ambiente sin LD)
     if (!ldClient) {
       console.warn(

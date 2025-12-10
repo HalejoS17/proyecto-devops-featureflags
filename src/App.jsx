@@ -4,25 +4,29 @@ import { useEffect, useState } from "react";
 import { books } from "./books";
 
 export default function App() {
-  const ldClient = useLDClient();         // Hook 1
+  const ldClient = useLDClient(); // Hook 1
 
   const [ready, setReady] = useState(false);        // Hook 2
   const [busquedaAvanzada, setBusquedaAvanzada] = useState(false); // Hook 3
   const [searchTitle, setSearchTitle] = useState("");              // Hook 4
   const [category, setCategory] = useState("");                    // Hook 5
 
-  useEffect(() => {                           // Hook 6
-    if (!ldClient) return;
+  useEffect(() => {
+    // 🟦 NUEVO: Si no hay LDClient (solo pasa en tests), continuar normal
+    if (!ldClient) {
+      console.warn("LaunchDarkly no está disponible (modo test).");
+      setBusquedaAvanzada(false);
+      setReady(true);
+      return;
+    }
 
     ldClient.waitForInitialization().then(() => {
-      // Ver qué ve realmente el SDK
       const flags = ldClient.allFlags();
       console.log("LD listo → Flags:", flags);
 
       const detail = ldClient.variationDetail("busqueda_avanzada", false);
       console.log("Detalle busqueda:", detail);
 
-      // value será true para usuario de LATAM, false para el resto
       setBusquedaAvanzada(detail.value);
       setReady(true);
     });

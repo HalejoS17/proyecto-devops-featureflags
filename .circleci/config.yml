@@ -26,8 +26,7 @@ jobs:
       - run: npm ci
       - run:
           name: Run Cypress tests
-          command: |
-            npx cypress run
+          command: npx cypress run
 
   build_docker_image:
     docker:
@@ -51,7 +50,7 @@ jobs:
 workflows:
   version: 2
 
-  ci_pipeline:
+  full_pipeline:
     jobs:
       - lint_code
       - unit_tests:
@@ -60,13 +59,8 @@ workflows:
       - e2e_tests:
           requires:
             - unit_tests
-
-  build_and_deploy:
-    jobs:
       - build_docker_image:
           requires:
-            - lint_code
-            - unit_tests
             - e2e_tests
       - notify:
           requires:

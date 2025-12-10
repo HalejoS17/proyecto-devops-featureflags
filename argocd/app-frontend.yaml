@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: featureflags-frontend
+  namespace: argocd           # donde está Argo CD
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TU_USUARIO/proyecto-devops-featureflags.git
+    targetRevision: main
+    path: k8s                 # carpeta de manifiestos
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

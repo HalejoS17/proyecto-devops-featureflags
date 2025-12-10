@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: featureflags-frontend
+  labels:
+    app: featureflags-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: featureflags-frontend
+  template:
+    metadata:
+      labels:
+        app: featureflags-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: sha1727/featureflags-frontend:latest
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always

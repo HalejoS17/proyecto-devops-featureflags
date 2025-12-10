@@ -11,30 +11,47 @@ export default function App() {
   const [searchTitle, setSearchTitle] = useState("");              // Hook 4
   const [category, setCategory] = useState("");                    // Hook 5
 
-  useEffect(() => {
-    // 🟦 NUEVO: Si no hay LDClient (solo pasa en tests), continuar normal
-    if (!ldClient) {
-      console.warn("LaunchDarkly no está disponible (modo test).");
+    useEffect(() => {
+    const isTest = import.meta.env.MODE === "test";
 
+    // 🟦 Caso 1: No hay cliente de LaunchDarkly (tests unitarios / ambiente sin LD)
+    if (!ldClient) {
+      console.warn(
+        isTest
+          ? "LaunchDarkly no está disponible (modo test)."
+          : "LaunchDarkly no está disponible."
+      );
+
+      // Hacemos el setState en la próxima micro-tarea para no romper la regla de React
       Promise.resolve().then(() => {
-        setBusquedaAvanzada(false);
-        setReady(true);
+        setBusquedaAvanzada(false); // sin flags, no hay búsqueda avanzada
+        setReady(true);             // la app puede renderizar normalmente
       });
 
       return;
     }
 
-    ldClient.waitForInitialization().then(() => {
-      const flags = ldClient.allFlags();
-      console.log("LD listo → Flags:", flags);
+    // 🟦 Caso 2: LDClient existe → inicializar y leer el flag real
+    ldClient
+      .waitForInitialization()
+      .then(() => {
+        const flags = ldClient.allFlags();
+        console.log("LD listo → Flags:", flags);
 
-      const detail = ldClient.variationDetail("busqueda_avanzada", false);
-      console.log("Detalle busqueda:", detail);
+        const detail = ldClient.variationDetail("busqueda_avanzada", false);
+        console.log("Detalle busqueda:", detail);
 
-      setBusquedaAvanzada(detail.value);
-      setReady(true);
-    });
+        setBusquedaAvanzada(detail.value); // true para LATAM, false para otros
+        setReady(true);
+      })
+      .catch((err) => {
+        // Si algo falla (por ejemplo en CI sin internet), no bloqueamos la UI
+        console.error("Error inicializando LaunchDarkly:", err);
+        setBusquedaAvanzada(false);
+        setReady(true);
+      });
   }, [ldClient]);
+
 
   if (!ready) {
     return <p>Cargando LaunchDarkly...</p>;

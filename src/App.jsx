@@ -15,8 +15,12 @@ export default function App() {
     // 🟦 NUEVO: Si no hay LDClient (solo pasa en tests), continuar normal
     if (!ldClient) {
       console.warn("LaunchDarkly no está disponible (modo test).");
-      setBusquedaAvanzada(false);
-      setReady(true);
+
+      Promise.resolve().then(() => {
+        setBusquedaAvanzada(false);
+        setReady(true);
+      });
+
       return;
     }
 

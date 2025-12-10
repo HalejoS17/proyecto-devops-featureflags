@@ -22,7 +22,7 @@ jobs:
     executor: node/default
     steps:
       - checkout
-      - run: npm install
+      - run: npm ci
       - run: npm run test:ci
 
   build_docker_image:
@@ -52,12 +52,12 @@ workflows:
       - unit_tests:
           requires:
             - lint_code
-      - component_tests:
+      - test_ci:
           requires:
             - unit_tests
       - build_docker_image:
           requires:
-            - component_tests
+            - test_ci
       - notify:
           requires:
             - build_docker_image

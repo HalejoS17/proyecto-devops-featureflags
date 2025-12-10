@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1765396920281" clover="3.2.0">
-  <project timestamp="1765396920281" name="All files">
+<coverage generated="1765397543842" clover="3.2.0">
+  <project timestamp="1765397543844" name="All files">
     <metrics statements="36" coveredstatements="22" conditionals="13" coveredconditionals="7" methods="12" coveredmethods="6" elements="61" coveredelements="35" complexity="0" loc="36" ncloc="36" packages="1" files="2" classes="2"/>
     <file name="App.jsx" path="C:\Users\ASUS\Documents\proyecto-devops-featureflags\app-frontend\src\App.jsx">
       <metrics statements="35" coveredstatements="21" conditionals="13" coveredconditionals="7" methods="12" coveredmethods="6"/>

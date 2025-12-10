@@ -74,7 +74,7 @@ export default function App() {
     <div style={{ padding: "2rem" }}>
       <p>Flag busqueda_avanzada: {String(busquedaAvanzada)}</p>
 
-      <h1>📚 Biblioteca virtual</h1>
+      <h1 data-testid="titulo-biblioteca">📚 Biblioteca virtual</h1>
 
       <input
         type="text"

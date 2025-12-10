@@ -21,16 +21,22 @@ jobs:
   e2e_tests:
     docker:
       - image: cypress/included:12.17.1
+
     steps:
       - checkout
-      - run: npm install --legacy-peer-deps
+      - run: npm ci
+
+      # 👉 Levantar Vite en background
       - run:
           name: Start Vite dev server
-          command: npm run dev -- --host 0.0.0.0 --port 5173
-          background: true
+          command: |
+            npm run dev -- --host 0.0.0.0 --port 5173 &
+            sleep 10
+
+      # 👉 Ejecutar Cypress
       - run:
           name: Run Cypress tests
-          command: npm run test:2e2
+          command: npx cypress run
 
   build_docker_image:
     docker:

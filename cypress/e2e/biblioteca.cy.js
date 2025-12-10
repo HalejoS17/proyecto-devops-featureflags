@@ -1,9 +1,10 @@
 describe("Biblioteca virtual", () => {
   it("muestra la lista de libros", () => {
-    // ✅ Usa el baseUrl configurado en cypress.config.cjs
     cy.visit("/");
 
-    cy.contains("Biblioteca virtual").should("exist");
+    // Espera hasta que el título esté visible
+    cy.waitForAppReady();
+
     cy.get("li").should("have.length.at.least", 5);
   });
 });

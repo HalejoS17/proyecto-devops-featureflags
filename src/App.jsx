@@ -14,50 +14,37 @@ export default function App() {
     useEffect(() => {
     const isTest = import.meta.env.MODE === "test";
 
-     if (isTest) {
-    setTimeout(() => {
-      setReady(true);
-      setBusquedaAvanzada(false);
-    }, 0);
-    return;
-  }
-    // 🟦 Caso 1: No hay cliente de LaunchDarkly (tests unitarios / ambiente sin LD)
-    if (!ldClient) {
-      console.warn(
-        isTest
-          ? "LaunchDarkly no está disponible (modo test)."
-          : "LaunchDarkly no está disponible."
-      );
-      // Hacemos el setState en la próxima micro-tarea para no romper la regla de React
-      Promise.resolve().then(() => {
-        setBusquedaAvanzada(false); // sin flags, no hay búsqueda avanzada
-        setReady(true);             // la app puede renderizar normalmente
-      });
-
+    // 🟦 Caso 1: entorno de pruebas → liberar UI rápidamente
+    if (isTest) {
+      setTimeout(() => {
+        setReady(true);
+        setBusquedaAvanzada(false);
+      }, 0);
       return;
     }
 
-    // 🟦 Caso 2: LDClient existe → inicializar y leer el flag real
+    // 🟦 Caso 2: no existe LaunchDarkly (CI, tests, modo offline)
+    if (!ldClient) {
+      setTimeout(() => {
+        setBusquedaAvanzada(false);
+        setReady(true);
+      }, 0);
+      return;
+    }
+
+    // 🟦 Caso 3: LaunchDarkly sí existe
     ldClient
       .waitForInitialization()
       .then(() => {
-        const flags = ldClient.allFlags();
-        console.log("LD listo → Flags:", flags);
-
         const detail = ldClient.variationDetail("busqueda_avanzada", false);
-        console.log("Detalle busqueda:", detail);
-
-        setBusquedaAvanzada(detail.value); // true para LATAM, false para otros
+        setBusquedaAvanzada(detail.value);
         setReady(true);
       })
-      .catch((err) => {
-        // Si algo falla (por ejemplo en CI sin internet), no bloqueamos la UI
-        console.error("Error inicializando LaunchDarkly:", err);
+      .catch(() => {
         setBusquedaAvanzada(false);
         setReady(true);
       });
   }, [ldClient]);
-
 
   if (!ready) {
     return <p>Cargando LaunchDarkly...</p>;

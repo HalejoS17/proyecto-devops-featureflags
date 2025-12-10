@@ -18,7 +18,7 @@ jobs:
       - run: npm install
       - run: npm test || echo "No unit tests configured"
 
-  component_tests:
+  test_ci:
     executor: node/default
     steps:
       - checkout

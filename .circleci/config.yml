@@ -1,45 +1,35 @@
 version: 2.1
 
 orbs:
+  node: circleci/node@5.1.0
   cypress: cypress-io/cypress@3.3.1
 
 jobs:
-  install_dependencies:
-    docker:
-      - image: cimg/node:20.0
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: cd app-frontend && npm install
-
+  # 1️⃣ Linter
   lint_code:
-    docker:
-      - image: cimg/node:20.0
+    executor: node/default
     steps:
       - checkout
-      - run:
-          name: Run ESLint
-          command: cd app-frontend && npm run lint
+      - run: npm install
+      - run: npm run lint
 
+  # 2️⃣ Unit tests
   unit_tests:
-    docker:
-      - image: cimg/node:20.0
+    executor: node/default
     steps:
       - checkout
-      - run:
-          name: Run unit tests
-          command: cd app-frontend && npm test || echo "No tests found"
+      - run: npm install
+      - run: npm test || echo "No tests configured"
 
+  # 3️⃣ Cypress tests
   e2e_tests:
-    docker:
-      - image: cypress/included:13.0.0
+    executor: cypress/default
     steps:
       - checkout
-      - run:
-          name: Run Cypress tests
-          command: cd app-frontend && npx cypress run
+      - cypress/install
+      - cypress/run
 
+  # 4️⃣ Build Docker image
   build_docker_image:
     docker:
       - image: cimg/base:stable
@@ -47,34 +37,40 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: Build Docker image
-          command: docker build -t sha1727/featureflags-frontend:latest app-frontend
+          name: Build Docker Image
+          command: |
+            docker build -t sha1727/featureflags-frontend:latest .
       - run:
-          name: Login to DockerHub
-          command: echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
-      - run:
-          name: Push image
-          command: docker push sha1727/featureflags-frontend:latest
+          name: Push Docker Image
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+            docker push sha1727/featureflags-frontend:latest
 
+  # 5️⃣ Notificación
+  notify:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run:
+          name: Notify by Email
+          command: |
+            echo "Pipeline completado correctamente" | mail -s "Pipeline OK" ale@correo.com
 
 workflows:
   version: 2
 
-  # Workflow 1 – Validación
-  validate_pipeline:
+  # --- Primer workflow: CI ---
+  ci_pipeline:
     jobs:
-      - install_dependencies
-      - lint_code:
-          requires:
-            - install_dependencies
+      - lint_code
       - unit_tests:
           requires:
-            - install_dependencies
+            - lint_code
       - e2e_tests:
           requires:
-            - install_dependencies
+            - unit_tests
 
-  # Workflow 2 – Build + Deploy automático a ArgoCD
+  # --- Segundo workflow: CD ---
   build_and_deploy:
     jobs:
       - build_docker_image:
@@ -82,10 +78,7 @@ workflows:
             - lint_code
             - unit_tests
             - e2e_tests
-    triggers:
-      - schedule:
-          cron: "0 6 * * *"
-          filters:
-            branches:
-              only:
-                - main
+
+      - notify:
+          requires:
+            - build_docker_image

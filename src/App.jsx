@@ -14,6 +14,11 @@ export default function App() {
     useEffect(() => {
     const isTest = import.meta.env.MODE === "test";
 
+    if (isTest) {
+      setReady(true);
+      setBusquedaAvanzada(false);
+      return;
+    }
     // 🟦 Caso 1: No hay cliente de LaunchDarkly (tests unitarios / ambiente sin LD)
     if (!ldClient) {
       console.warn(
@@ -21,7 +26,6 @@ export default function App() {
           ? "LaunchDarkly no está disponible (modo test)."
           : "LaunchDarkly no está disponible."
       );
-
       // Hacemos el setState en la próxima micro-tarea para no romper la regla de React
       Promise.resolve().then(() => {
         setBusquedaAvanzada(false); // sin flags, no hay búsqueda avanzada

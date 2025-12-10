@@ -1,10 +1,25 @@
 export default {
-  testEnvironment: "jsdom",
+  testEnvironment: "jest-environment-jsdom",
+
   transform: {
-    "^.+\\.[tj]sx?$": "babel-jest"
+    "^.+\\.[jt]sx?$": [
+      "babel-jest",
+      {
+        presets: ["@babel/preset-env", "@babel/preset-react"],
+      }
+    ],
+
+    // 👇 transformador para import.meta
+    "\\.(js|jsx)$": "<rootDir>/tests/transformers/importMetaFix.cjs"
   },
-  moduleFileExtensions: ["js", "jsx"],
-  setupFilesAfterEnv: ["@testing-library/jest-dom"],
+
+  transformIgnorePatterns: ["/node_modules/"],
+
+  setupFilesAfterEnv: [
+    "@testing-library/jest-dom",
+    "<rootDir>/tests/setupEnv.js"
+  ],
+
   moduleNameMapper: {
     "launchdarkly-react-client-sdk": "<rootDir>/tests/__mocks__/launchdarkly.js"
   }

@@ -2,10 +2,8 @@ version: 2.1
 
 orbs:
   node: circleci/node@5.1.0
-  cypress: cypress-io/cypress@3.3.1
 
 jobs:
-  # 1️⃣ Linter
   lint_code:
     executor: node/default
     steps:
@@ -13,53 +11,46 @@ jobs:
       - run: npm install
       - run: npm run lint
 
-  # 2️⃣ Unit tests
   unit_tests:
     executor: node/default
     steps:
       - checkout
       - run: npm install
-      - run: npm test || echo "No tests configured"
+      - run: npm test || echo "No unit tests configured"
 
-  # 3️⃣ Cypress tests
   e2e_tests:
-    executor: cypress/default
+    docker:
+      - image: cypress/included:12.17.1
     steps:
       - checkout
-      - cypress/install
-      - cypress/run
+      - run: npm ci
+      - run:
+          name: Run Cypress tests
+          command: |
+            npx cypress run
 
-  # 4️⃣ Build Docker image
   build_docker_image:
     docker:
       - image: cimg/base:stable
     steps:
       - checkout
       - setup_remote_docker
+      - run: docker build -t sha1727/featureflags-frontend:latest .
       - run:
-          name: Build Docker Image
-          command: |
-            docker build -t sha1727/featureflags-frontend:latest .
-      - run:
-          name: Push Docker Image
+          name: Push to DockerHub
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
             docker push sha1727/featureflags-frontend:latest
 
-  # 5️⃣ Notificación
   notify:
     docker:
       - image: cimg/base:stable
     steps:
-      - run:
-          name: Notify by Email
-          command: |
-            echo "Pipeline completado correctamente" | mail -s "Pipeline OK" ale@correo.com
+      - run: echo "Pipeline completado correctamente"
 
 workflows:
   version: 2
 
-  # --- Primer workflow: CI ---
   ci_pipeline:
     jobs:
       - lint_code
@@ -70,7 +61,6 @@ workflows:
           requires:
             - unit_tests
 
-  # --- Segundo workflow: CD ---
   build_and_deploy:
     jobs:
       - build_docker_image:
@@ -78,7 +68,6 @@ workflows:
             - lint_code
             - unit_tests
             - e2e_tests
-
       - notify:
           requires:
             - build_docker_image
